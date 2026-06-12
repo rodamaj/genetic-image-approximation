@@ -201,22 +201,25 @@
 
         const type = shapeType === null ? p.floor(p.random(3)) : shapeType;
 
-        p.fill(fillColor);
-        p.noStroke();
-
         if (type === 0) {
+          p.fill(fillColor);
+          p.noStroke();
           p.circle(
             p.random(40, p.width - 40),
             p.random(40, p.height - 40),
             p.random(20, 90)
           );
         } else if (type === 1) {
+          p.fill(fillColor);
+          p.noStroke();
           const x = p.random(50, p.width - 50);
           const y = p.random(50, p.height - 50);
           const size = p.random(20, 70);
           p.triangle(x, y - size, x - size, y + size, x + size, y + size);
         } else {
           p.noFill();
+          p.stroke(fillColor);
+          p.strokeWeight(p.random(1, 4));
           p.line(
             p.random(20, p.width - 20),
             p.random(20, p.height - 20),
