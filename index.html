@@ -190,50 +190,74 @@
     // Sketch 2: random shapes
     const sketch2 = function (p) {
       let action = null;
+      let population = [];
 
-      function randomShape(shapeType = null) {
-        const fillColor = p.color(
-          p.random(40, 255),
-          p.random(40, 255),
-          p.random(40, 255),
-          190
-        );
-
+      function createFigure(shapeType = null) {
         const type = shapeType === null ? p.floor(p.random(3)) : shapeType;
 
-        if (type === 0) {
-          p.fill(fillColor);
+        return {
+          type,
+          x1: p.random(20, p.width - 20),
+          y1: p.random(20, p.height - 20),
+          x2: p.random(20, p.width - 20),
+          y2: p.random(20, p.height - 20),
+          size: p.random(20, 90),
+          color: p.color(
+            p.random(40, 255),
+            p.random(40, 255),
+            p.random(40, 255),
+            190
+          ),
+          strokeWeight: p.random(1, 4)
+        };
+      }
+
+      function drawFigure(figure) {
+        if (figure.type === 0) {
           p.noStroke();
-          p.circle(
-            p.random(40, p.width - 40),
-            p.random(40, p.height - 40),
-            p.random(20, 90)
+          p.fill(figure.color);
+          p.circle(figure.x1, figure.y1, figure.size);
+        } else if (figure.type === 1) {
+          p.noStroke();
+          p.fill(figure.color);
+          p.triangle(
+            figure.x1,
+            figure.y1 - figure.size,
+            figure.x1 - figure.size,
+            figure.y1 + figure.size,
+            figure.x1 + figure.size,
+            figure.y1 + figure.size
           );
-        } else if (type === 1) {
-          p.fill(fillColor);
-          p.noStroke();
-          const x = p.random(50, p.width - 50);
-          const y = p.random(50, p.height - 50);
-          const size = p.random(20, 70);
-          p.triangle(x, y - size, x - size, y + size, x + size, y + size);
         } else {
           p.noFill();
-          p.stroke(fillColor);
-          p.strokeWeight(p.random(1, 4));
-          p.line(
-            p.random(20, p.width - 20),
-            p.random(20, p.height - 20),
-            p.random(20, p.width - 20),
-            p.random(20, p.height - 20)
-          );
+          p.stroke(figure.color);
+          p.strokeWeight(figure.strokeWeight);
+          p.line(figure.x1, figure.y1, figure.x2, figure.y2);
+        }
+      }
+
+      function redrawPopulation() {
+        p.background(255);
+        for (const figure of population) {
+          drawFigure(figure);
         }
       }
 
       p.generateRandomFigures = function (count = 30) {
-        p.background(255);
+        population = [];
         for (let i = 0; i < count; i++) {
-          randomShape(i % 3);
+          population.push(createFigure(i % 3));
         }
+        redrawPopulation();
+      };
+
+      p.getPopulation = function () {
+        return population;
+      };
+
+      p.setPopulation = function (newPopulation) {
+        population = Array.isArray(newPopulation) ? newPopulation : [];
+        redrawPopulation();
       };
 
       p.setup = function () {
@@ -298,7 +322,6 @@
       document
         .getElementById("generarPoblacionBtn")
         .addEventListener("click", function () {
-          // Genera exactamente 30 figuras aleatorias en el canvas.
           p.generateRandomFigures(30);
         });
     };
