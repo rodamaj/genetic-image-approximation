@@ -91,6 +91,15 @@
         <button id="crossoverBtn" class="w3-button w3-orange w3-round">
           Cruzar
         </button>
+        <button id="mutateBtn" class="w3-button w3-red w3-round">
+          Mutar
+        </button>
+        <button id="evolveGenerationBtn" class="w3-button w3-green w3-round">
+          Evolucionar 1 Generación
+        </button>
+        <button id="toggleAutoEvolveBtn" class="w3-button w3-dark-grey w3-round">
+          Iniciar Evolución Continua
+        </button>
       </div>
 
       <!-- Upper drawing canvas intentionally omitted -->
@@ -117,9 +126,12 @@
     const sketch2 = function (p) {
       let population = [];
       let selectedParents = [];
+      let latestOffspring = [];
       let generation = 0;
+      let autoEvolveTimer = null;
       const cellSize = 25;
       const fitnessStatus = document.getElementById("fitnessStatus");
+      const autoEvolveButton = document.getElementById("toggleAutoEvolveBtn");
       const referenceImage = document.getElementById("stockImage");
       const referenceCanvas = document.createElement("canvas");
       const referenceContext = referenceCanvas.getContext("2d", {
@@ -168,6 +180,21 @@
 
       function updateStatus(message) {
         fitnessStatus.textContent = message;
+      }
+
+      function setAutoEvolveButtonLabel(isRunning) {
+        autoEvolveButton.textContent = isRunning
+          ? "Pausar Evolución Continua"
+          : "Iniciar Evolución Continua";
+      }
+
+      function stopAutoEvolve() {
+        if (autoEvolveTimer !== null) {
+          window.clearInterval(autoEvolveTimer);
+          autoEvolveTimer = null;
+        }
+
+        setAutoEvolveButtonLabel(false);
       }
 
       function syncReferenceImage() {
@@ -257,6 +284,32 @@
         );
       }
 
+      function clampColorChannel(value) {
+        return Math.max(0, Math.min(255, value));
+      }
+
+      function moveChannelTowardTarget(currentValue, targetValue, mutationStrength) {
+        const directionalStep = (targetValue - currentValue) * 0.35;
+        const randomOffset = p.random(-mutationStrength * 0.35, mutationStrength * 0.35);
+
+        return clampColorChannel(currentValue + directionalStep + randomOffset);
+      }
+
+      function mutateFigure(figure, mutationStrength = 25) {
+        const targetColor = figure.targetColor || getAverageReferenceColor(figure.x, figure.y, figure.size);
+        const mutatedColor = p.color(
+          moveChannelTowardTarget(p.red(figure.color), targetColor.r, mutationStrength),
+          moveChannelTowardTarget(p.green(figure.color), targetColor.g, mutationStrength),
+          moveChannelTowardTarget(p.blue(figure.color), targetColor.b, mutationStrength),
+          p.alpha(figure.color)
+        );
+
+        figure.color = mutatedColor;
+        updateFigureFitness(figure);
+
+        return figure;
+      }
+
       function updatePopulationFitness() {
         if (!syncReferenceImage()) {
           for (const figure of population) {
@@ -265,6 +318,7 @@
             figure.isSelected = false;
           }
           selectedParents = [];
+          latestOffspring = [];
           return null;
         }
 
@@ -285,8 +339,10 @@
       }
 
       p.generateRandomFigures = function () {
+        stopAutoEvolve();
         population = [];
         selectedParents = [];
+        latestOffspring = [];
         generation = 0;
 
         for (let y = 0; y < p.height; y += cellSize) {
@@ -381,6 +437,7 @@
         }
 
         selectedParents = offspring;
+        latestOffspring = offspring;
         generation += 1;
 
         const averageFitness = updatePopulationFitness();
@@ -395,9 +452,106 @@
         return offspring;
       };
 
+      p.mutateLatestOffspring = function (mutationRate = 0.7, mutationStrength = 25) {
+        if (latestOffspring.length === 0) {
+          updateStatus("No hay hijos recientes para mutar. Ejecuta el cruce antes de mutar.");
+          return [];
+        }
+
+        const mutatedFigures = [];
+
+        for (const figure of latestOffspring) {
+          if (p.random() <= mutationRate) {
+            mutateFigure(figure, mutationStrength);
+            figure.isSelected = true;
+            mutatedFigures.push(figure);
+          }
+        }
+
+        if (mutatedFigures.length === 0) {
+          const fallbackFigure = latestOffspring[0];
+          mutateFigure(fallbackFigure, mutationStrength);
+          fallbackFigure.isSelected = true;
+          mutatedFigures.push(fallbackFigure);
+        }
+
+        const averageFitness = updatePopulationFitness();
+        redrawPopulation();
+
+        if (averageFitness !== null) {
+          updateStatus(
+            `${mutatedFigures.length} hijos mutados hacia sus colores objetivo en la generación ${generation}. Aptitud promedio: ${averageFitness.toFixed(4)}.`
+          );
+        }
+
+        return mutatedFigures;
+      };
+
+      p.evolveOneGeneration = function () {
+        if (population.length === 0) {
+          updateStatus("No hay población disponible. Genera la población antes de evolucionar.");
+          return null;
+        }
+
+        const parents = p.selectParents();
+        if (parents.length < 2) {
+          updateStatus("No fue posible evolucionar: se necesitan al menos dos padres seleccionados.");
+          return null;
+        }
+
+        const offspring = p.crossoverSelectedParents();
+        if (offspring.length === 0) {
+          updateStatus("No fue posible evolucionar: el cruce no produjo hijos.");
+          return null;
+        }
+
+        const mutatedFigures = p.mutateLatestOffspring();
+        const averageFitness = population.length > 0 ? updatePopulationFitness() : null;
+        redrawPopulation();
+
+        if (averageFitness !== null) {
+          updateStatus(
+            `Generación ${generation} evolucionada. ${parents.length} padres, ${offspring.length} hijos y ${mutatedFigures.length} mutaciones aplicadas. Aptitud promedio: ${averageFitness.toFixed(4)}.`
+          );
+        }
+
+        return {
+          parents,
+          offspring,
+          mutatedFigures,
+          generation,
+          averageFitness
+        };
+      };
+
+      p.toggleAutoEvolve = function (intervalMs = 250) {
+        if (autoEvolveTimer !== null) {
+          stopAutoEvolve();
+          updateStatus(`Evolución continua en pausa en la generación ${generation}.`);
+          return false;
+        }
+
+        if (population.length === 0) {
+          p.generateRandomFigures();
+        }
+
+        autoEvolveTimer = window.setInterval(function () {
+          const result = p.evolveOneGeneration();
+          if (result === null) {
+            stopAutoEvolve();
+          }
+        }, intervalMs);
+
+        setAutoEvolveButtonLabel(true);
+        updateStatus(`Evolución continua iniciada desde la generación ${generation}.`);
+        return true;
+      };
+
       p.setPopulation = function (newPopulation) {
+        stopAutoEvolve();
         population = Array.isArray(newPopulation) ? newPopulation : [];
         selectedParents = [];
+        latestOffspring = [];
         generation = 0;
         const averageFitness = population.length > 0 ? updatePopulationFitness() : null;
         redrawPopulation();
@@ -414,6 +568,7 @@
         canvas.parent("sketch-holder-2");
         p.background(255);
         syncReferenceImage();
+        setAutoEvolveButtonLabel(false);
       };
 
       referenceImage.addEventListener("load", function () {
@@ -441,6 +596,24 @@
         .getElementById("crossoverBtn")
         .addEventListener("click", function () {
           p.crossoverSelectedParents();
+        });
+
+      document
+        .getElementById("mutateBtn")
+        .addEventListener("click", function () {
+          p.mutateLatestOffspring();
+        });
+
+      document
+        .getElementById("evolveGenerationBtn")
+        .addEventListener("click", function () {
+          p.evolveOneGeneration();
+        });
+
+      document
+        .getElementById("toggleAutoEvolveBtn")
+        .addEventListener("click", function () {
+          p.toggleAutoEvolve();
         });
     };
 
