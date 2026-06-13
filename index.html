@@ -82,6 +82,15 @@
       </div>
 
       <div class="toolbar w3-margin-bottom">
+        <label for="pixelSizeSelect">Tamaño de píxel:</label>
+        <select id="pixelSizeSelect" class="w3-select w3-border" style="width: 110px;">
+          <option value="25">25 px</option>
+          <option value="20">20 px</option>
+          <option value="15">15 px</option>
+          <option value="10" selected>10 px</option>
+          <option value="8">8 px</option>
+          <option value="5">5 px</option>
+        </select>
         <button id="generatePopulationBtn" class="w3-button w3-teal w3-round">
           Generar Población
         </button>
@@ -129,9 +138,10 @@
       let latestOffspring = [];
       let generation = 0;
       let autoEvolveTimer = null;
-      const cellSize = 25;
+      let cellSize = 10;
       const fitnessStatus = document.getElementById("fitnessStatus");
       const autoEvolveButton = document.getElementById("toggleAutoEvolveBtn");
+      const pixelSizeSelect = document.getElementById("pixelSizeSelect");
       const referenceImage = document.getElementById("stockImage");
       const referenceCanvas = document.createElement("canvas");
       const referenceContext = referenceCanvas.getContext("2d", {
@@ -195,6 +205,14 @@
         }
 
         setAutoEvolveButtonLabel(false);
+      }
+
+      function syncCellSizeFromUI() {
+        const selectedSize = Number(pixelSizeSelect.value);
+
+        if (Number.isFinite(selectedSize) && selectedSize > 0) {
+          cellSize = selectedSize;
+        }
       }
 
       function syncReferenceImage() {
@@ -359,7 +377,7 @@
         }
 
         updateStatus(
-          `Generación ${generation} lista. ${population.length} cuadrados evaluados. Aptitud promedio: ${averageFitness.toFixed(4)}.`
+          `Generación ${generation} lista. ${population.length} cuadrados evaluados con píxeles de ${cellSize}px. Aptitud promedio: ${averageFitness.toFixed(4)}.`
         );
       };
 
@@ -558,7 +576,7 @@
 
         if (averageFitness !== null) {
           updateStatus(
-            `Aptitud actualizada. ${population.length} cuadrados evaluados. Aptitud promedio: ${averageFitness.toFixed(4)}.`
+            `Aptitud actualizada. ${population.length} cuadrados evaluados con píxeles de ${cellSize}px. Aptitud promedio: ${averageFitness.toFixed(4)}.`
           );
         }
       };
@@ -567,6 +585,7 @@
         const canvas = p.createCanvas(400, 300);
         canvas.parent("sketch-holder-2");
         p.background(255);
+        syncCellSizeFromUI();
         syncReferenceImage();
         setAutoEvolveButtonLabel(false);
       };
@@ -580,9 +599,17 @@
         updateStatus("Aptitud no disponible. No se pudo cargar la imagen de referencia local.");
       });
 
+      pixelSizeSelect.addEventListener("change", function () {
+        syncCellSizeFromUI();
+        updateStatus(
+          `Tamaño de píxel actualizado a ${cellSize}px. Genera la población nuevamente para aplicar la nueva resolución.`
+        );
+      });
+
       document
         .getElementById("generatePopulationBtn")
         .addEventListener("click", function () {
+          syncCellSizeFromUI();
           p.generateRandomFigures();
         });
 
