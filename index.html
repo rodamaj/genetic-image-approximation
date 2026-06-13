@@ -61,20 +61,20 @@
 </head>
 <body>
   <div class="app-wrap">
-    <!-- CARD 1: imagen + botones genéticos (sin canvas) -->
+    <!-- CARD 1: reference image and genetic algorithm controls -->
     <div class="w3-card w3-white w3-padding-large w3-round-large w3-margin-bottom">
-      <h1 class="w3-xlarge">Basic p5.js Square Approximation</h1>
+      <h1 class="w3-xlarge">Aproximación con Cuadrados en p5.js</h1>
       <p class="status">
-        Generate a square-based population to start approximating the reference image with large pixel-like blocks.
+        Genera una población basada en cuadrados para empezar a aproximar la imagen de referencia con bloques grandes tipo píxel.
       </p>
 
       <div class="image-shell w3-margin-top">
-        <p class="status">Reference image</p>
+        <p class="status">Imagen de referencia</p>
         <img
           id="stockImage"
           class="random-image"
           src="./image.webp"
-          alt="Reference image used for the square approximation"
+          alt="Imagen de referencia usada para la aproximación con cuadrados"
           width="400"
           height="300"
           loading="lazy"
@@ -82,29 +82,32 @@
       </div>
 
       <div class="toolbar w3-margin-bottom">
-        <button id="generarPoblacionBtn" class="w3-button w3-teal w3-round">
+        <button id="generatePopulationBtn" class="w3-button w3-teal w3-round">
           Generar Población
         </button>
-        <button id="seleccionarPadresBtn" class="w3-button w3-blue w3-round">
-          Seleccionar padres
+        <button id="selectParentsBtn" class="w3-button w3-blue w3-round">
+          Seleccionar Padres
+        </button>
+        <button id="crossoverBtn" class="w3-button w3-orange w3-round">
+          Cruzar
         </button>
       </div>
 
-      <!-- Canvas anterior eliminado -->
+      <!-- Upper drawing canvas intentionally omitted -->
     </div>
 
     <!-- CARD 2: square approximation canvas -->
     <div class="w3-card w3-white w3-padding-large w3-round-large">
-      <h2 class="w3-large">Square Approximation Canvas</h2>
+      <h2 class="w3-large">Canvas de Aproximación</h2>
       <p class="status">
-        The generated population fills the full area with large pixel-like blocks.
+        La población generada llena toda el área con bloques grandes tipo píxel.
       </p>
 
       <div class="canvas-shell">
         <div id="sketch-holder-2"></div>
       </div>
       <p id="fitnessStatus" class="status w3-margin-top">
-        Fitness pending. Generate the population to compare each square with the reference image.
+        Aptitud pendiente. Genera la población para comparar cada cuadrado con la imagen de referencia.
       </p>
     </div>
   </div>
@@ -114,6 +117,7 @@
     const sketch2 = function (p) {
       let population = [];
       let selectedParents = [];
+      let generation = 0;
       const cellSize = 25;
       const fitnessStatus = document.getElementById("fitnessStatus");
       const referenceImage = document.getElementById("stockImage");
@@ -169,7 +173,7 @@
       function syncReferenceImage() {
         if (!referenceImage.complete || referenceImage.naturalWidth === 0) {
           referenceReady = false;
-          updateStatus("Fitness pending. The reference image is still loading.");
+          updateStatus("Aptitud pendiente. La imagen de referencia todavía está cargando.");
           return false;
         }
 
@@ -184,11 +188,11 @@
           );
           referenceContext.getImageData(0, 0, 1, 1);
           referenceReady = true;
-          updateStatus("Reference image ready. Generate the population to evaluate each square.");
+          updateStatus("Imagen de referencia lista. Genera la población para evaluar cada cuadrado.");
           return true;
         } catch (error) {
           referenceReady = false;
-          updateStatus("Fitness unavailable. The reference image could not be sampled.");
+          updateStatus("Aptitud no disponible. No se pudo muestrear la imagen de referencia.");
           console.error("Reference image sampling failed:", error);
           return false;
         }
@@ -244,6 +248,15 @@
         return calculateFigureFitness(figure);
       }
 
+      function mixParentColors(parentA, parentB) {
+        return p.color(
+          (p.red(parentA.color) + p.red(parentB.color)) / 2,
+          (p.green(parentA.color) + p.green(parentB.color)) / 2,
+          (p.blue(parentA.color) + p.blue(parentB.color)) / 2,
+          (p.alpha(parentA.color) + p.alpha(parentB.color)) / 2
+        );
+      }
+
       function updatePopulationFitness() {
         if (!syncReferenceImage()) {
           for (const figure of population) {
@@ -274,6 +287,7 @@
       p.generateRandomFigures = function () {
         population = [];
         selectedParents = [];
+        generation = 0;
 
         for (let y = 0; y < p.height; y += cellSize) {
           for (let x = 0; x < p.width; x += cellSize) {
@@ -289,7 +303,7 @@
         }
 
         updateStatus(
-          `Fitness ready. ${population.length} squares evaluated. Average fitness: ${averageFitness.toFixed(4)}.`
+          `Generación ${generation} lista. ${population.length} cuadrados evaluados. Aptitud promedio: ${averageFitness.toFixed(4)}.`
         );
       };
 
@@ -307,7 +321,7 @@
 
       p.selectParents = function (topPercent = 0.2) {
         if (population.length === 0) {
-          updateStatus("No population available. Generate the population before selecting parents.");
+          updateStatus("No hay población disponible. Genera la población antes de seleccionar padres.");
           return [];
         }
 
@@ -327,21 +341,70 @@
 
         redrawPopulation();
         updateStatus(
-          `${selectedParents.length} parents selected from ${population.length} squares. Best fitness: ${selectedParents[0].fitness.toFixed(4)}.`
+          `${selectedParents.length} padres seleccionados de ${population.length} cuadrados. Mejor aptitud: ${selectedParents[0].fitness.toFixed(4)}.`
         );
 
         return selectedParents;
       };
 
+      p.crossoverSelectedParents = function () {
+        if (population.length === 0) {
+          updateStatus("No hay población disponible. Genera la población antes de cruzar.");
+          return [];
+        }
+
+        if (selectedParents.length < 2) {
+          updateStatus("Se necesitan al menos dos padres seleccionados antes de cruzar.");
+          return [];
+        }
+
+        for (const figure of population) {
+          figure.isSelected = false;
+        }
+
+        const sortedWorstFirst = [...population].sort(function (a, b) {
+          return (a.fitness ?? Infinity) - (b.fitness ?? Infinity);
+        });
+        const replacementCount = Math.min(selectedParents.length, sortedWorstFirst.length);
+        const offspring = [];
+
+        for (let i = 0; i < replacementCount; i++) {
+          const targetFigure = sortedWorstFirst[i];
+          const parentA = selectedParents[i % selectedParents.length];
+          const parentB = selectedParents[(i + 1) % selectedParents.length];
+          const childColor = mixParentColors(parentA, parentB);
+
+          targetFigure.color = childColor;
+          targetFigure.isSelected = true;
+          updateFigureFitness(targetFigure);
+          offspring.push(targetFigure);
+        }
+
+        selectedParents = offspring;
+        generation += 1;
+
+        const averageFitness = updatePopulationFitness();
+        redrawPopulation();
+
+        if (averageFitness !== null) {
+          updateStatus(
+            `Generación ${generation} creada mediante cruce. ${offspring.length} hijos reemplazaron a los cuadrados más débiles. Aptitud promedio: ${averageFitness.toFixed(4)}.`
+          );
+        }
+
+        return offspring;
+      };
+
       p.setPopulation = function (newPopulation) {
         population = Array.isArray(newPopulation) ? newPopulation : [];
         selectedParents = [];
+        generation = 0;
         const averageFitness = population.length > 0 ? updatePopulationFitness() : null;
         redrawPopulation();
 
         if (averageFitness !== null) {
           updateStatus(
-            `Fitness updated. ${population.length} squares evaluated. Average fitness: ${averageFitness.toFixed(4)}.`
+            `Aptitud actualizada. ${population.length} cuadrados evaluados. Aptitud promedio: ${averageFitness.toFixed(4)}.`
           );
         }
       };
@@ -359,28 +422,33 @@
 
       referenceImage.addEventListener("error", function () {
         referenceReady = false;
-        updateStatus("Fitness unavailable. The local reference image could not be loaded.");
+        updateStatus("Aptitud no disponible. No se pudo cargar la imagen de referencia local.");
       });
 
       document
-        .getElementById("generarPoblacionBtn")
+        .getElementById("generatePopulationBtn")
         .addEventListener("click", function () {
           p.generateRandomFigures();
         });
 
       document
-        .getElementById("seleccionarPadresBtn")
+        .getElementById("selectParentsBtn")
         .addEventListener("click", function () {
           p.selectParents();
         });
+
+      document
+        .getElementById("crossoverBtn")
+        .addEventListener("click", function () {
+          p.crossoverSelectedParents();
+        });
     };
 
-    // Crear solo la instancia del segundo sketch
+    // Create the p5 sketch instance
     const p5instance2 = new p5(sketch2);
 
-    // hiperparámetros
-    // pob: 30
-    // mantenerla similar
+    // Hyperparameters
+    // population: determined by the full grid
 
   </script>
 </body>
