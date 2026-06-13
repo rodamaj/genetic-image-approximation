@@ -85,6 +85,9 @@
         <button id="generarPoblacionBtn" class="w3-button w3-teal w3-round">
           Generar Población
         </button>
+        <button id="seleccionarPadresBtn" class="w3-button w3-blue w3-round">
+          Seleccionar padres
+        </button>
       </div>
 
       <!-- Canvas anterior eliminado -->
@@ -110,6 +113,7 @@
     // Sketch 2: square-based approximation canvas
     const sketch2 = function (p) {
       let population = [];
+      let selectedParents = [];
       const cellSize = 25;
       const fitnessStatus = document.getElementById("fitnessStatus");
       const referenceImage = document.getElementById("stockImage");
@@ -134,7 +138,8 @@
             190
           ),
           fitness: null,
-          targetColor: null
+          targetColor: null,
+          isSelected: false
         };
 
         if (referenceReady) {
@@ -148,6 +153,13 @@
         p.noStroke();
         p.fill(figure.color);
         p.square(figure.x, figure.y, figure.size);
+
+        if (figure.isSelected) {
+          p.noFill();
+          p.stroke(255);
+          p.strokeWeight(2);
+          p.square(figure.x + 1, figure.y + 1, figure.size - 2);
+        }
       }
 
       function updateStatus(message) {
@@ -237,7 +249,9 @@
           for (const figure of population) {
             figure.fitness = null;
             figure.targetColor = null;
+            figure.isSelected = false;
           }
+          selectedParents = [];
           return null;
         }
 
@@ -259,6 +273,7 @@
 
       p.generateRandomFigures = function () {
         population = [];
+        selectedParents = [];
 
         for (let y = 0; y < p.height; y += cellSize) {
           for (let x = 0; x < p.width; x += cellSize) {
@@ -282,12 +297,45 @@
         return population;
       };
 
+      p.getSelectedParents = function () {
+        return selectedParents;
+      };
+
       p.calculateFigureFitness = function (figure) {
         return calculateFigureFitness(figure);
       };
 
+      p.selectParents = function (topPercent = 0.2) {
+        if (population.length === 0) {
+          updateStatus("No population available. Generate the population before selecting parents.");
+          return [];
+        }
+
+        for (const figure of population) {
+          figure.isSelected = false;
+        }
+
+        const sortedPopulation = [...population].sort(function (a, b) {
+          return (b.fitness ?? -Infinity) - (a.fitness ?? -Infinity);
+        });
+        const parentCount = Math.max(1, Math.floor(sortedPopulation.length * topPercent));
+        selectedParents = sortedPopulation.slice(0, parentCount);
+
+        for (const figure of selectedParents) {
+          figure.isSelected = true;
+        }
+
+        redrawPopulation();
+        updateStatus(
+          `${selectedParents.length} parents selected from ${population.length} squares. Best fitness: ${selectedParents[0].fitness.toFixed(4)}.`
+        );
+
+        return selectedParents;
+      };
+
       p.setPopulation = function (newPopulation) {
         population = Array.isArray(newPopulation) ? newPopulation : [];
+        selectedParents = [];
         const averageFitness = population.length > 0 ? updatePopulationFitness() : null;
         redrawPopulation();
 
@@ -318,6 +366,12 @@
         .getElementById("generarPoblacionBtn")
         .addEventListener("click", function () {
           p.generateRandomFigures();
+        });
+
+      document
+        .getElementById("seleccionarPadresBtn")
+        .addEventListener("click", function () {
+          p.selectParents();
         });
     };
 
