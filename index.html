@@ -17,6 +17,13 @@
       margin: 32px auto;
       padding: 0 16px;
     }
+    .comparison-layout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      align-items: start;
+      margin-top: 16px;
+    }
     .toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -49,13 +56,18 @@
       margin-top: 8px;
     }
     .image-shell {
-      max-width: 444px;
-      margin-bottom: 8px;
+      max-width: none;
+      margin-bottom: 0;
     }
     #sketch-holder-2 canvas {
       display: block;
       margin: 0 auto;
       border: 1px solid #ccc;
+    }
+    @media (max-width: 900px) {
+      .comparison-layout {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -67,19 +79,6 @@
       <p class="status">
         Genera una población basada en cuadrados para empezar a aproximar la imagen de referencia con bloques grandes tipo píxel.
       </p>
-
-      <div class="image-shell w3-margin-top">
-        <p class="status">Imagen de referencia</p>
-        <img
-          id="stockImage"
-          class="random-image"
-          src="./image.webp"
-          alt="Imagen de referencia usada para la aproximación con cuadrados"
-          width="400"
-          height="300"
-          loading="lazy"
-        />
-      </div>
 
       <div class="toolbar w3-margin-bottom">
         <label for="pixelSizeSelect">Tamaño de píxel:</label>
@@ -114,19 +113,32 @@
       <!-- Upper drawing canvas intentionally omitted -->
     </div>
 
-    <!-- CARD 2: square approximation canvas -->
-    <div class="w3-card w3-white w3-padding-large w3-round-large">
-      <h2 class="w3-large">Canvas de Aproximación</h2>
-      <p class="status">
-        La población generada llena toda el área con bloques grandes tipo píxel.
-      </p>
-
-      <div class="canvas-shell">
-        <div id="sketch-holder-2"></div>
+    <div class="comparison-layout">
+      <div class="image-shell">
+        <p class="status">Imagen de referencia</p>
+        <img
+          id="stockImage"
+          class="random-image"
+          src="./image.webp"
+          alt="Imagen de referencia usada para la aproximación con cuadrados"
+          width="400"
+          height="300"
+          loading="lazy"
+        />
       </div>
-      <p id="fitnessStatus" class="status w3-margin-top">
-        Aptitud pendiente. Genera la población para comparar cada cuadrado con la imagen de referencia.
-      </p>
+
+      <!-- CARD 2: square approximation canvas -->
+      <div class="canvas-shell">
+        <h2 class="w3-large">Canvas de Aproximación</h2>
+        <p class="status">
+          La población generada llena toda el área con bloques grandes tipo píxel.
+        </p>
+
+        <div id="sketch-holder-2"></div>
+        <p id="fitnessStatus" class="status w3-margin-top">
+          Aptitud pendiente. Genera la población para comparar cada cuadrado con la imagen de referencia.
+        </p>
+      </div>
     </div>
   </div>
 
@@ -306,7 +318,7 @@
         return Math.max(0, Math.min(255, value));
       }
 
-      function mutateFigure(figure, mutationStrength = 5) {
+      function mutateFigure(figure, mutationStrength = 25) {
         const mutatedColor = p.color(
           clampColorChannel(p.red(figure.color) + p.random(-mutationStrength, mutationStrength)),
           clampColorChannel(p.green(figure.color) + p.random(-mutationStrength, mutationStrength)),
@@ -534,7 +546,7 @@
         };
       };
 
-      p.toggleAutoEvolve = function (intervalMs = 250) {
+      p.toggleAutoEvolve = function (intervalMs = 25) {
         if (autoEvolveTimer !== null) {
           stopAutoEvolve();
           updateStatus(`Evolución continua en pausa en la generación ${generation}.`);
@@ -594,7 +606,7 @@
       pixelSizeSelect.addEventListener("change", function () {
         syncCellSizeFromUI();
         updateStatus(
-          `Tamaño de píxel actualizado a ${cellSize}px. Genera la población nuevamente para aplicar la nueva resolución.`
+          `Tamaño de píxel actualizado a ${cellSize} px. Genera la población nuevamente para aplicar la nueva resolución.`
         );
       });
 
