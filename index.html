@@ -306,19 +306,11 @@
         return Math.max(0, Math.min(255, value));
       }
 
-      function moveChannelTowardTarget(currentValue, targetValue, mutationStrength) {
-        const directionalStep = (targetValue - currentValue) * 0.35;
-        const randomOffset = p.random(-mutationStrength * 0.35, mutationStrength * 0.35);
-
-        return clampColorChannel(currentValue + directionalStep + randomOffset);
-      }
-
-      function mutateFigure(figure, mutationStrength = 25) {
-        const targetColor = figure.targetColor || getAverageReferenceColor(figure.x, figure.y, figure.size);
+      function mutateFigure(figure, mutationStrength = 5) {
         const mutatedColor = p.color(
-          moveChannelTowardTarget(p.red(figure.color), targetColor.r, mutationStrength),
-          moveChannelTowardTarget(p.green(figure.color), targetColor.g, mutationStrength),
-          moveChannelTowardTarget(p.blue(figure.color), targetColor.b, mutationStrength),
+          clampColorChannel(p.red(figure.color) + p.random(-mutationStrength, mutationStrength)),
+          clampColorChannel(p.green(figure.color) + p.random(-mutationStrength, mutationStrength)),
+          clampColorChannel(p.blue(figure.color) + p.random(-mutationStrength, mutationStrength)),
           p.alpha(figure.color)
         );
 
@@ -498,7 +490,7 @@
 
         if (averageFitness !== null) {
           updateStatus(
-            `${mutatedFigures.length} hijos mutados hacia sus colores objetivo en la generación ${generation}. Aptitud promedio: ${averageFitness.toFixed(4)}.`
+            `${mutatedFigures.length} hijos mutados en la generación ${generation}. Aptitud promedio: ${averageFitness.toFixed(4)}.`
           );
         }
 
