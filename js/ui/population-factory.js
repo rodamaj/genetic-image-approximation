@@ -1,25 +1,10 @@
-import {
-  FIGURE_ALPHA,
-  FIXED_CELL_SIZE,
-  RANDOM_COLOR_MAX,
-  RANDOM_COLOR_MIN
-} from "../config/constants.js";
+import { FIXED_CELL_SIZE } from "../config/constants.js";
+import { Figure } from "../genetic/figure.js";
 
 function createFigure(p, x, y, referenceReady, updateFigureFitness) {
-  const figure = {
-    x,
-    y,
-    size: FIXED_CELL_SIZE,
-    color: p.color(
-      p.random(RANDOM_COLOR_MIN, RANDOM_COLOR_MAX),
-      p.random(RANDOM_COLOR_MIN, RANDOM_COLOR_MAX),
-      p.random(RANDOM_COLOR_MIN, RANDOM_COLOR_MAX),
-      FIGURE_ALPHA
-    ),
-    fitness: null,
-    targetColor: null,
-    isSelected: false
-  };
+  const figure = Figure.createRandom(x, y, function randomBetween(min, max) {
+    return p.random(min, max);
+  });
 
   if (referenceReady) {
     return updateFigureFitness(figure);

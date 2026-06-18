@@ -16,8 +16,8 @@ export function createApp(algorithmState, uiState, referenceState) {
 
   const uiControls = createUiControls(uiState, updateStatus);
 
-  function updateFigureFitness(p, figure) {
-    return calculateFigureFitness(p, algorithmState.referenceReady, referenceState, figure);
+  function updateFigureFitness(figure) {
+    return calculateFigureFitness(algorithmState.referenceReady, referenceState, figure);
   }
 
   function generateRandomFigures(p) {
@@ -26,13 +26,12 @@ export function createApp(algorithmState, uiState, referenceState) {
       p,
       algorithmState.referenceReady,
       function update(figure) {
-        return updateFigureFitness(p, figure);
+        return updateFigureFitness(figure);
       }
     );
     algorithmState.generation = 0;
 
     const fitnessResult = updatePopulationFitness(
-      p,
       algorithmState,
       referenceState,
       updateStatus
@@ -55,15 +54,35 @@ export function createApp(algorithmState, uiState, referenceState) {
       generateRandomFigures(p);
     }
 
-    return evolveOneGeneration(p, algorithmState, {
-      updateFigureFitness: function update(figure) {
-        return updateFigureFitness(p, figure);
-      },
-      redrawPopulation: function redraw() {
-        redrawPopulation(p, algorithmState.population);
-      },
-      updateStatus
-    });
+    const result = evolveOneGeneration(
+      algorithmState.population,
+      {
+        updateFigureFitness: function update(figure) {
+          return updateFigureFitness(figure);
+        },
+        random: function random() {
+          return p.random();
+        },
+        randomBetween: function randomBetween(min, max) {
+          return p.random(min, max);
+        }
+      }
+    );
+
+    algorithmState.population = result.population;
+    algorithmState.generation += 1;
+
+    redrawPopulation(p, algorithmState.population);
+    updateStatus(
+      `Generación ${algorithmState.generation} evolucionada. ${result.parents.length} padres, ` +
+      `${result.offspring.length} hijos y ${result.mutatedFigures.length} mutaciones aplicadas. ` +
+      `Aptitud promedio: ${result.averageFitness.toFixed(4)}.`
+    );
+
+    return {
+      ...result,
+      generation: algorithmState.generation
+    };
   }
 
   function toggleAutoEvolve(p, intervalMs = AUTO_EVOLVE_INTERVAL_MS) {

@@ -1,52 +1,26 @@
 import { getPopulationIndexByFigure } from "./population.js";
-import {
-  COLOR_CHANNEL_MAX,
-  COLOR_CHANNEL_MIN,
-  MUTATION_RATE,
-  MUTATION_STRENGTH
-} from "../config/constants.js";
-
-function clampColorChannel(value) {
-  return Math.max(COLOR_CHANNEL_MIN, Math.min(COLOR_CHANNEL_MAX, value));
-}
-
-function mutateFigure(p, figure, mutationStrength = MUTATION_STRENGTH) {
-  return {
-    ...figure,
-    color: p.color(
-      clampColorChannel(p.red(figure.color) + p.random(-mutationStrength, mutationStrength)),
-      clampColorChannel(p.green(figure.color) + p.random(-mutationStrength, mutationStrength)),
-      clampColorChannel(p.blue(figure.color) + p.random(-mutationStrength, mutationStrength)),
-      p.alpha(figure.color)
-    )
-  };
-}
+import { MUTATION_RATE, MUTATION_STRENGTH } from "../config/constants.js";
 
 export function mutatePopulation(
-  p,
   population,
   offspring,
   updateFigureFitness,
-  mutationRate = MUTATION_RATE,
-  mutationStrength = MUTATION_STRENGTH
+  random,
+  randomBetween,
 ) {
   const populationIndexByFigure = getPopulationIndexByFigure(population);
   const nextPopulation = population.map(function (figure) {
-    return {
-      ...figure,
-      isSelected: false
-    };
+    return figure.withSelection(false);
   });
   const mutatedFigureIndexes = new Set();
 
   for (const figure of offspring) {
-    if (p.random() <= mutationRate) {
+    if (random() <= MUTATION_RATE) {
       const targetIndex = populationIndexByFigure.get(figure);
-      const mutatedFigure = mutateFigure(p, nextPopulation[targetIndex], mutationStrength);
-      const evaluatedMutatedFigure = updateFigureFitness({
-        ...mutatedFigure,
-        isSelected: true
-      });
+      const mutatedFigure = nextPopulation[targetIndex]
+        .withColor(nextPopulation[targetIndex].mutateColor(randomBetween, MUTATION_STRENGTH))
+        .withSelection(true);
+      const evaluatedMutatedFigure = updateFigureFitness(mutatedFigure);
       nextPopulation[targetIndex] = evaluatedMutatedFigure;
       mutatedFigureIndexes.add(targetIndex);
     }
@@ -54,11 +28,10 @@ export function mutatePopulation(
 
   if (mutatedFigureIndexes.size === 0) {
     const fallbackIndex = populationIndexByFigure.get(offspring[0]);
-    const fallbackFigure = mutateFigure(p, nextPopulation[fallbackIndex], mutationStrength);
-    nextPopulation[fallbackIndex] = updateFigureFitness({
-      ...fallbackFigure,
-      isSelected: true
-    });
+    const fallbackFigure = nextPopulation[fallbackIndex]
+      .withColor(nextPopulation[fallbackIndex].mutateColor(randomBetween, MUTATION_STRENGTH))
+      .withSelection(true);
+    nextPopulation[fallbackIndex] = updateFigureFitness(fallbackFigure);
   }
 
   return {

@@ -2,7 +2,7 @@ import { BACKGROUND_COLOR, HIGHLIGHT_STROKE_COLOR } from "../config/constants.js
 
 function drawFigure(p, figure) {
   p.noStroke();
-  p.fill(figure.color);
+  p.fill(figure.color.r, figure.color.g, figure.color.b, figure.color.a);
   p.square(figure.x, figure.y, figure.size);
 
   if (figure.isSelected) {

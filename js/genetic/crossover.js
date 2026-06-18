@@ -1,25 +1,13 @@
 import { getPopulationIndexByFigure } from "./population.js";
 
-function mixParentColors(p, parentA, parentB) {
-  return p.color(
-    (p.red(parentA.color) + p.red(parentB.color)) / 2,
-    (p.green(parentA.color) + p.green(parentB.color)) / 2,
-    (p.blue(parentA.color) + p.blue(parentB.color)) / 2,
-    (p.alpha(parentA.color) + p.alpha(parentB.color)) / 2
-  );
-}
-
-export function crossoverPopulation(p, population, parents, updateFigureFitness) {
+export function crossoverPopulation(population, parents, updateFigureFitness) {
   const populationIndexByFigure = getPopulationIndexByFigure(population);
   const sortedWorstFirst = [...population].sort(function (a, b) {
     return (a.fitness ?? Infinity) - (b.fitness ?? Infinity);
   });
   const replacementCount = Math.min(parents.length, sortedWorstFirst.length);
   const nextPopulation = population.map(function (figure) {
-    return {
-      ...figure,
-      isSelected: false
-    };
+    return figure.withSelection(false);
   });
   const offspring = [];
 
@@ -28,11 +16,9 @@ export function crossoverPopulation(p, population, parents, updateFigureFitness)
     const targetIndex = populationIndexByFigure.get(targetFigure);
     const parentA = parents[i % parents.length];
     const parentB = parents[(i + 1) % parents.length];
-    const childFigure = {
-      ...nextPopulation[targetIndex],
-      color: mixParentColors(p, parentA, parentB),
-      isSelected: true
-    };
+    const childFigure = nextPopulation[targetIndex]
+      .withColor(parentA.mixColorWith(parentB))
+      .withSelection(true);
 
     const evaluatedChildFigure = updateFigureFitness(childFigure);
     nextPopulation[targetIndex] = evaluatedChildFigure;

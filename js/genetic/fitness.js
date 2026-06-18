@@ -51,20 +51,16 @@ export function getAverageReferenceColor(referenceState, x, y, size) {
   };
 }
 
-export function calculateFigureFitness(p, referenceReady, referenceState, figure) {
+export function calculateFigureFitness(referenceReady, referenceState, figure) {
   if (!referenceReady) {
-    return {
-      ...figure,
-      fitness: null,
-      targetColor: null
-    };
+    return figure.withFitness(null, null);
   }
 
   const targetColor = getAverageReferenceColor(referenceState, figure.x, figure.y, figure.size);
-  const redDiff = p.red(figure.color) - targetColor.r;
-  const greenDiff = p.green(figure.color) - targetColor.g;
-  const blueDiff = p.blue(figure.color) - targetColor.b;
-  const alphaDiff = p.alpha(figure.color) - targetColor.a;
+  const redDiff = figure.color.r - targetColor.r;
+  const greenDiff = figure.color.g - targetColor.g;
+  const blueDiff = figure.color.b - targetColor.b;
+  const alphaDiff = figure.color.a - targetColor.a;
   const distance = Math.sqrt(
     redDiff ** 2 +
     greenDiff ** 2 +
@@ -72,11 +68,7 @@ export function calculateFigureFitness(p, referenceReady, referenceState, figure
     alphaDiff ** 2
   );
 
-  return {
-    ...figure,
-    targetColor,
-    fitness: 1 / (1 + distance)
-  };
+  return figure.withFitness(targetColor, 1 / (1 + distance));
 }
 
 export function getAverageFitness(population) {
@@ -94,7 +86,6 @@ export function getAverageFitness(population) {
 }
 
 export function updatePopulationFitness(
-  p,
   algorithmState,
   referenceState,
   updateStatus
@@ -102,19 +93,14 @@ export function updatePopulationFitness(
   if (!syncReferenceImage(referenceState, updateStatus)) {
     return {
       population: algorithmState.population.map(function (figure) {
-        return {
-          ...figure,
-          fitness: null,
-          targetColor: null,
-          isSelected: false
-        };
+        return figure.clearFitness();
       }),
       averageFitness: null
     };
   }
 
   const population = algorithmState.population.map(function (figure) {
-    return calculateFigureFitness(p, true, referenceState, figure);
+    return calculateFigureFitness(true, referenceState, figure);
   });
 
   return {
