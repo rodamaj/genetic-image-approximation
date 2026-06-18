@@ -1,10 +1,4 @@
-function getPopulationIndexByFigure(population) {
-  return new Map(
-    population.map(function (figure, index) {
-      return [figure, index];
-    })
-  );
-}
+import { getPopulationIndexByFigure } from "./population.js";
 
 function clampColorChannel(value) {
   return Math.max(0, Math.min(255, value));

@@ -1,10 +1,4 @@
-function getPopulationIndexByFigure(population) {
-  return new Map(
-    population.map(function (figure, index) {
-      return [figure, index];
-    })
-  );
-}
+import { getPopulationIndexByFigure } from "./population.js";
 
 function mixParentColors(p, parentA, parentB) {
   return p.color(
