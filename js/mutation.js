@@ -1,19 +1,7 @@
+import { getAverageFitness } from "./fitness.js";
+
 function clampColorChannel(value) {
   return Math.max(0, Math.min(255, value));
-}
-
-function getAverageFitness(population) {
-  if (population.length === 0) {
-    return null;
-  }
-
-  let totalFitness = 0;
-
-  for (const figure of population) {
-    totalFitness += figure.fitness ?? 0;
-  }
-
-  return totalFitness / population.length;
 }
 
 export function mutateFigure(p, figure, mutationStrength = 5) {

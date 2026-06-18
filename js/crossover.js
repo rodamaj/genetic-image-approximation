@@ -1,16 +1,4 @@
-function getAverageFitness(population) {
-  if (population.length === 0) {
-    return null;
-  }
-
-  let totalFitness = 0;
-
-  for (const figure of population) {
-    totalFitness += figure.fitness ?? 0;
-  }
-
-  return totalFitness / population.length;
-}
+import { getAverageFitness } from "./fitness.js";
 
 export function mixParentColors(p, parentA, parentB) {
   return p.color(

@@ -77,6 +77,20 @@ export function calculateFigureFitness(p, state, figure) {
   return figure.fitness;
 }
 
+export function getAverageFitness(population) {
+  if (population.length === 0) {
+    return null;
+  }
+
+  let totalFitness = 0;
+
+  for (const figure of population) {
+    totalFitness += figure.fitness ?? 0;
+  }
+
+  return totalFitness / population.length;
+}
+
 export function updatePopulationFitness(p, state) {
   if (!syncReferenceImage(state)) {
     for (const figure of state.population) {
@@ -89,11 +103,9 @@ export function updatePopulationFitness(p, state) {
     return null;
   }
 
-  let totalFitness = 0;
-
   for (const figure of state.population) {
-    totalFitness += calculateFigureFitness(p, state, figure);
+    calculateFigureFitness(p, state, figure);
   }
 
-  return totalFitness / state.population.length;
+  return getAverageFitness(state.population);
 }
