@@ -1,9 +1,12 @@
-import { calculateFigureFitness, updatePopulationFitness } from "../genetic/fitness.js";
 import { evolveOneGeneration } from "../genetic/evolution.js";
 import { AUTO_EVOLVE_INTERVAL_MS, FIXED_CELL_SIZE } from "../config/constants.js";
 import { createUiControls } from "./ui-controls.js";
 import { redrawPopulation } from "./renderer.js";
 import { createPopulation } from "./population-factory.js";
+import {
+  evaluateFigureWithReference,
+  evaluatePopulationWithReference
+} from "./reference-fitness.js";
 import {
   initializeReference as syncInitialReference,
   handleReferenceError as setReferenceError
@@ -17,11 +20,16 @@ export function createApp(algorithmState, uiState, referenceState) {
   const uiControls = createUiControls(uiState, updateStatus);
 
   function updateFigureFitness(figure) {
-    return calculateFigureFitness(algorithmState.referenceReady, referenceState, figure);
+    if (!algorithmState.referenceReady) {
+      return figure.clearFitness();
+    }
+
+    return evaluateFigureWithReference(figure, referenceState);
   }
 
   function generateRandomFigures(p) {
     uiControls.stopAutoEvolve();
+    algorithmState.referenceReady = initializeReference();
     algorithmState.population = createPopulation(
       p,
       algorithmState.referenceReady,
@@ -31,10 +39,14 @@ export function createApp(algorithmState, uiState, referenceState) {
     );
     algorithmState.generation = 0;
 
-    const fitnessResult = updatePopulationFitness(
-      algorithmState,
-      referenceState,
-      updateStatus
+    if (!algorithmState.referenceReady) {
+      redrawPopulation(p, algorithmState.population);
+      return;
+    }
+
+    const fitnessResult = evaluatePopulationWithReference(
+      algorithmState.population,
+      referenceState
     );
     algorithmState.population = fitnessResult.population;
     algorithmState.referenceReady = fitnessResult.averageFitness !== null;
@@ -52,6 +64,13 @@ export function createApp(algorithmState, uiState, referenceState) {
   function evolveGeneration(p) {
     if (algorithmState.population.length === 0) {
       generateRandomFigures(p);
+    }
+
+    if (!algorithmState.referenceReady) {
+      algorithmState.referenceReady = initializeReference();
+      if (!algorithmState.referenceReady) {
+        return null;
+      }
     }
 
     const result = evolveOneGeneration(

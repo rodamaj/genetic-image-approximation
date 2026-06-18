@@ -54,6 +54,13 @@ export class Figure {
     });
   }
 
+  withTargetColor(targetColor) {
+    return new Figure({
+      ...this,
+      targetColor
+    });
+  }
+
   withFitness(targetColor, fitness) {
     return new Figure({
       ...this,
