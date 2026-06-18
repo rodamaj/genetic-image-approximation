@@ -12,10 +12,7 @@ export function selectParents(population, topPercent = 0.2) {
     })
   );
 
-  return population.map(function (figure, index) {
-    return {
-      ...figure,
-      isSelected: selectedIndexes.has(index)
-    };
+  return population.filter(function (_figure, index) {
+    return selectedIndexes.has(index);
   });
 }

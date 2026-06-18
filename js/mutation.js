@@ -19,13 +19,11 @@ function mutateFigure(p, figure, mutationStrength = 5) {
 export function mutatePopulation(
   p,
   population,
+  offspring,
   updateFigureFitness,
   mutationRate = 0.7,
   mutationStrength = 25
 ) {
-  const offspring = population.filter(function (figure) {
-    return figure.isSelected;
-  });
   const populationIndexByFigure = getPopulationIndexByFigure(population);
   const nextPopulation = population.map(function (figure) {
     return {
@@ -54,5 +52,10 @@ export function mutatePopulation(
     nextPopulation[fallbackIndex] = fallbackFigure;
   }
 
-  return nextPopulation;
+  return {
+    population: nextPopulation,
+    mutatedFigures: nextPopulation.filter(function (figure) {
+      return figure.isSelected;
+    })
+  };
 }

@@ -9,10 +9,7 @@ function mixParentColors(p, parentA, parentB) {
   );
 }
 
-export function crossoverPopulation(p, population, updateFigureFitness) {
-  const parents = population.filter(function (figure) {
-    return figure.isSelected;
-  });
+export function crossoverPopulation(p, population, parents, updateFigureFitness) {
   const populationIndexByFigure = getPopulationIndexByFigure(population);
   const sortedWorstFirst = [...population].sort(function (a, b) {
     return (a.fitness ?? Infinity) - (b.fitness ?? Infinity);
@@ -24,6 +21,7 @@ export function crossoverPopulation(p, population, updateFigureFitness) {
       isSelected: false
     };
   });
+  const offspring = [];
 
   for (let i = 0; i < replacementCount; i++) {
     const targetFigure = sortedWorstFirst[i];
@@ -38,7 +36,11 @@ export function crossoverPopulation(p, population, updateFigureFitness) {
 
     updateFigureFitness(childFigure);
     nextPopulation[targetIndex] = childFigure;
+    offspring.push(childFigure);
   }
 
-  return nextPopulation;
+  return {
+    population: nextPopulation,
+    offspring
+  };
 }
