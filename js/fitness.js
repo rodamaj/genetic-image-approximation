@@ -1,38 +1,35 @@
-export function syncReferenceImage(state) {
-  if (!state.referenceImage.complete || state.referenceImage.naturalWidth === 0) {
-    state.referenceReady = false;
-    state.updateStatus("Aptitud pendiente. La imagen de referencia todavía está cargando.");
+export function syncReferenceImage(referenceState, updateStatus) {
+  if (!referenceState.image.complete || referenceState.image.naturalWidth === 0) {
+    updateStatus("Aptitud pendiente. La imagen de referencia todavía está cargando.");
     return false;
   }
 
   try {
-    state.referenceContext.clearRect(
+    referenceState.context.clearRect(
       0,
       0,
-      state.referenceCanvas.width,
-      state.referenceCanvas.height
+      referenceState.canvas.width,
+      referenceState.canvas.height
     );
-    state.referenceContext.drawImage(
-      state.referenceImage,
+    referenceState.context.drawImage(
+      referenceState.image,
       0,
       0,
-      state.referenceCanvas.width,
-      state.referenceCanvas.height
+      referenceState.canvas.width,
+      referenceState.canvas.height
     );
-    state.referenceContext.getImageData(0, 0, 1, 1);
-    state.referenceReady = true;
-    state.updateStatus("Imagen de referencia lista. Genera la población para evaluar cada cuadrado.");
+    referenceState.context.getImageData(0, 0, 1, 1);
+    updateStatus("Imagen de referencia lista. Genera la población para evaluar cada cuadrado.");
     return true;
   } catch (error) {
-    state.referenceReady = false;
-    state.updateStatus("Aptitud no disponible. No se pudo muestrear la imagen de referencia.");
+    updateStatus("Aptitud no disponible. No se pudo muestrear la imagen de referencia.");
     console.error("Reference image sampling failed:", error);
     return false;
   }
 }
 
-export function getAverageReferenceColor(state, x, y, size) {
-  const { data, width, height } = state.referenceContext.getImageData(x, y, size, size);
+export function getAverageReferenceColor(referenceState, x, y, size) {
+  const { data, width, height } = referenceState.context.getImageData(x, y, size, size);
   let red = 0;
   let green = 0;
   let blue = 0;
@@ -54,8 +51,8 @@ export function getAverageReferenceColor(state, x, y, size) {
   };
 }
 
-export function calculateFigureFitness(p, state, figure) {
-  if (!state.referenceReady) {
+export function calculateFigureFitness(p, referenceReady, referenceState, figure) {
+  if (!referenceReady) {
     return {
       ...figure,
       fitness: null,
@@ -63,7 +60,7 @@ export function calculateFigureFitness(p, state, figure) {
     };
   }
 
-  const targetColor = getAverageReferenceColor(state, figure.x, figure.y, figure.size);
+  const targetColor = getAverageReferenceColor(referenceState, figure.x, figure.y, figure.size);
   const redDiff = p.red(figure.color) - targetColor.r;
   const greenDiff = p.green(figure.color) - targetColor.g;
   const blueDiff = p.blue(figure.color) - targetColor.b;
@@ -96,10 +93,10 @@ export function getAverageFitness(population) {
   return totalFitness / population.length;
 }
 
-export function updatePopulationFitness(p, state) {
-  if (!syncReferenceImage(state)) {
+export function updatePopulationFitness(p, algorithmState, referenceState, updateStatus) {
+  if (!syncReferenceImage(referenceState, updateStatus)) {
     return {
-      population: state.population.map(function (figure) {
+      population: algorithmState.population.map(function (figure) {
         return {
           ...figure,
           fitness: null,
@@ -111,8 +108,8 @@ export function updatePopulationFitness(p, state) {
     };
   }
 
-  const population = state.population.map(function (figure) {
-    return calculateFigureFitness(p, state, figure);
+  const population = algorithmState.population.map(function (figure) {
+    return calculateFigureFitness(p, true, referenceState, figure);
   });
 
   return {
