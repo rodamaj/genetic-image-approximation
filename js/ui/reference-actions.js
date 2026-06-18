@@ -1,4 +1,4 @@
-import { syncReferenceImage } from "./fitness.js";
+import { syncReferenceImage } from "../genetic/fitness.js";
 
 export function initializeReference(algorithmState, referenceState, updateStatus) {
   algorithmState.referenceReady = syncReferenceImage(referenceState, updateStatus);

@@ -1,8 +1,8 @@
-import { createAlgorithmState } from "./algorithm-state.js";
-import { createUiState } from "./ui-state.js";
-import { createReferenceState } from "./reference-state.js";
-import { createApp } from "./app.js";
-import { BACKGROUND_COLOR, CANVAS_HEIGHT, CANVAS_WIDTH } from "./constants.js";
+import { createAlgorithmState } from "./state/algorithm-state.js";
+import { createUiState } from "./state/ui-state.js";
+import { createReferenceState } from "./state/reference-state.js";
+import { createApp } from "./ui/app.js";
+import { BACKGROUND_COLOR, CANVAS_HEIGHT, CANVAS_WIDTH } from "./config/constants.js";
 
 const algorithmState = createAlgorithmState();
 const uiState = createUiState();

@@ -1,6 +1,6 @@
-import { calculateFigureFitness, updatePopulationFitness } from "./fitness.js";
-import { evolveOneGeneration } from "./evolution.js";
-import { AUTO_EVOLVE_INTERVAL_MS, FIXED_CELL_SIZE } from "./constants.js";
+import { calculateFigureFitness, updatePopulationFitness } from "../genetic/fitness.js";
+import { evolveOneGeneration } from "../genetic/evolution.js";
+import { AUTO_EVOLVE_INTERVAL_MS, FIXED_CELL_SIZE } from "../config/constants.js";
 import { createUiControls } from "./ui-controls.js";
 import { redrawPopulation } from "./renderer.js";
 import { createPopulation } from "./population-factory.js";

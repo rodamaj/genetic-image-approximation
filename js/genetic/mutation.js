@@ -4,7 +4,7 @@ import {
   COLOR_CHANNEL_MIN,
   MUTATION_RATE,
   MUTATION_STRENGTH
-} from "./constants.js";
+} from "../config/constants.js";
 
 function clampColorChannel(value) {
   return Math.max(COLOR_CHANNEL_MIN, Math.min(COLOR_CHANNEL_MAX, value));

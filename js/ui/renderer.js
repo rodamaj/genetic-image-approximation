@@ -1,4 +1,4 @@
-import { BACKGROUND_COLOR, HIGHLIGHT_STROKE_COLOR } from "./constants.js";
+import { BACKGROUND_COLOR, HIGHLIGHT_STROKE_COLOR } from "../config/constants.js";
 
 function drawFigure(p, figure) {
   p.noStroke();

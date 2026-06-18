@@ -1,4 +1,4 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from "./constants.js";
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from "../config/constants.js";
 
 export function createReferenceState(image) {
   const canvas = document.createElement("canvas");

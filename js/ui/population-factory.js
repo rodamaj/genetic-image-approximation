@@ -3,7 +3,7 @@ import {
   FIXED_CELL_SIZE,
   RANDOM_COLOR_MAX,
   RANDOM_COLOR_MIN
-} from "./constants.js";
+} from "../config/constants.js";
 
 function createFigure(p, x, y, referenceReady, updateFigureFitness) {
   const figure = {
