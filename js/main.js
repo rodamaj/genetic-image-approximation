@@ -3,15 +3,10 @@ import {
   calculateFigureFitness,
   updatePopulationFitness
 } from "./fitness.js";
-import { selectParents } from "./selection.js";
-import { crossoverSelectedParents } from "./crossover.js";
-import { mutateLatestOffspring } from "./mutation.js";
 import { evolveOneGeneration } from "./evolution.js";
 
 const state = {
   population: [],
-  selectedParents: [],
-  latestOffspring: [],
   generation: 0,
   autoEvolveTimer: null,
   cellSize: 10,
@@ -51,11 +46,7 @@ function stopAutoEvolve() {
 }
 
 function syncCellSizeFromUI() {
-  const selectedSize = Number(state.pixelSizeSelect.value);
-
-  if (Number.isFinite(selectedSize) && selectedSize > 0) {
-    state.cellSize = selectedSize;
-  }
+  state.cellSize = Number(state.pixelSizeSelect.value);
 }
 
 function createFigure(p, x, y) {
@@ -105,33 +96,9 @@ function updateFigureFitness(p, figure) {
   return calculateFigureFitness(p, state, figure);
 }
 
-function applyGeneticStepResult(p, result) {
-  state.population = result.population;
-
-  if ("selectedParents" in result) {
-    state.selectedParents = result.selectedParents;
-  }
-
-  if ("latestOffspring" in result) {
-    state.latestOffspring = result.latestOffspring;
-  }
-
-  if ("generation" in result) {
-    state.generation = result.generation;
-  }
-
-  redrawPopulation(p);
-
-  if (result.statusMessage) {
-    updateStatus(result.statusMessage);
-  }
-}
-
 function generateRandomFigures(p) {
   stopAutoEvolve();
   state.population = [];
-  state.selectedParents = [];
-  state.latestOffspring = [];
   state.generation = 0;
 
   for (let y = 0; y < p.height; y += state.cellSize) {
@@ -157,56 +124,11 @@ const sketch2 = function (p) {
     generateRandomFigures(p);
   };
 
-  p.getPopulation = function () {
-    return state.population;
-  };
-
-  p.getSelectedParents = function () {
-    return state.selectedParents;
-  };
-
-  p.calculateFigureFitness = function (figure) {
-    return updateFigureFitness(p, figure);
-  };
-
-  p.selectParents = function (topPercent = 0.2) {
-    const result = selectParents(state.population, topPercent);
-    applyGeneticStepResult(p, result);
-    return result.selectedParents;
-  };
-
-  p.crossoverSelectedParents = function () {
-    const result = crossoverSelectedParents(
-      p,
-      state.population,
-      state.selectedParents,
-      function update(figure) {
-        return updateFigureFitness(p, figure);
-      },
-      state.generation
-    );
-    applyGeneticStepResult(p, result);
-    return result.latestOffspring;
-  };
-
-  p.mutateLatestOffspring = function (mutationRate = 0.7, mutationStrength = 25) {
-    const result = mutateLatestOffspring(
-      p,
-      state.population,
-      state.latestOffspring,
-      state.selectedParents,
-      function update(figure) {
-        return updateFigureFitness(p, figure);
-      },
-      state.generation,
-      mutationRate,
-      mutationStrength
-    );
-    applyGeneticStepResult(p, result);
-    return result.mutatedFigures;
-  };
-
   p.evolveOneGeneration = function () {
+    if (state.population.length === 0) {
+      generateRandomFigures(p);
+    }
+
     return evolveOneGeneration(p, state, {
       updateFigureFitness: function update(figure) {
         return updateFigureFitness(p, figure);
@@ -229,31 +151,12 @@ const sketch2 = function (p) {
     }
 
     state.autoEvolveTimer = window.setInterval(function () {
-      const result = p.evolveOneGeneration();
-      if (result === null) {
-        stopAutoEvolve();
-      }
+      p.evolveOneGeneration();
     }, intervalMs);
 
     setAutoEvolveButtonLabel(true);
     updateStatus(`Evolución continua iniciada desde la generación ${state.generation}.`);
     return true;
-  };
-
-  p.setPopulation = function (newPopulation) {
-    stopAutoEvolve();
-    state.population = Array.isArray(newPopulation) ? newPopulation : [];
-    state.selectedParents = [];
-    state.latestOffspring = [];
-    state.generation = 0;
-    const averageFitness = state.population.length > 0 ? updatePopulationFitness(p, state) : null;
-    redrawPopulation(p);
-
-    if (averageFitness !== null) {
-      updateStatus(
-        `Aptitud actualizada. ${state.population.length} cuadrados evaluados con píxeles de ${state.cellSize}px. Aptitud promedio: ${averageFitness.toFixed(4)}.`
-      );
-    }
   };
 
   p.setup = function () {
@@ -287,18 +190,6 @@ const p5instance2 = new p5(sketch2);
 document.getElementById("generatePopulationBtn").addEventListener("click", function () {
   syncCellSizeFromUI();
   p5instance2.generateRandomFigures();
-});
-
-document.getElementById("selectParentsBtn").addEventListener("click", function () {
-  p5instance2.selectParents();
-});
-
-document.getElementById("crossoverBtn").addEventListener("click", function () {
-  p5instance2.crossoverSelectedParents();
-});
-
-document.getElementById("mutateBtn").addEventListener("click", function () {
-  p5instance2.mutateLatestOffspring();
 });
 
 document.getElementById("evolveGenerationBtn").addEventListener("click", function () {

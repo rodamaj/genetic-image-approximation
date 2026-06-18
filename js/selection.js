@@ -1,14 +1,4 @@
 export function selectParents(population, topPercent = 0.2) {
-  if (population.length === 0) {
-    return {
-      population,
-      selectedParents: [],
-      latestOffspring: [],
-      statusMessage:
-        "No hay población disponible. Genera la población antes de seleccionar padres."
-    };
-  }
-
   const indexedPopulation = population.map(function (figure, index) {
     return { figure, index };
   });
@@ -21,25 +11,11 @@ export function selectParents(population, topPercent = 0.2) {
       return index;
     })
   );
-  const nextPopulation = population.map(function (figure, index) {
+
+  return population.map(function (figure, index) {
     return {
       ...figure,
       isSelected: selectedIndexes.has(index)
     };
   });
-  const selectedParents = nextPopulation.filter(function (_figure, index) {
-    return selectedIndexes.has(index);
-  });
-  const bestFitness = selectedParents[0].fitness;
-  const bestFitnessLabel =
-    typeof bestFitness === "number" ? bestFitness.toFixed(4) : "sin evaluar";
-
-  return {
-    population: nextPopulation,
-    selectedParents,
-    latestOffspring: [],
-    statusMessage:
-      `${selectedParents.length} padres seleccionados de ${nextPopulation.length} cuadrados. ` +
-      `Mejor aptitud: ${bestFitnessLabel}.`
-  };
 }

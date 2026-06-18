@@ -98,8 +98,6 @@ export function updatePopulationFitness(p, state) {
       figure.targetColor = null;
       figure.isSelected = false;
     }
-    state.selectedParents = [];
-    state.latestOffspring = [];
     return null;
   }
 

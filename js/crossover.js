@@ -1,6 +1,12 @@
-import { getAverageFitness } from "./fitness.js";
+function getPopulationIndexByFigure(population) {
+  return new Map(
+    population.map(function (figure, index) {
+      return [figure, index];
+    })
+  );
+}
 
-export function mixParentColors(p, parentA, parentB) {
+function mixParentColors(p, parentA, parentB) {
   return p.color(
     (p.red(parentA.color) + p.red(parentB.color)) / 2,
     (p.green(parentA.color) + p.green(parentB.color)) / 2,
@@ -9,57 +15,27 @@ export function mixParentColors(p, parentA, parentB) {
   );
 }
 
-export function crossoverSelectedParents(
-  p,
-  population,
-  selectedParents,
-  updateFigureFitness,
-  generation
-) {
-  if (population.length === 0) {
-    return {
-      population,
-      selectedParents,
-      latestOffspring: [],
-      generation,
-      averageFitness: null,
-      statusMessage: "No hay población disponible. Genera la población antes de cruzar."
-    };
-  }
-
-  if (selectedParents.length < 2) {
-    return {
-      population,
-      selectedParents,
-      latestOffspring: [],
-      generation,
-      averageFitness: null,
-      statusMessage: "Se necesitan al menos dos padres seleccionados antes de cruzar."
-    };
-  }
-
-  const populationIndexByFigure = new Map(
-    population.map(function (figure, index) {
-      return [figure, index];
-    })
-  );
+export function crossoverPopulation(p, population, updateFigureFitness) {
+  const parents = population.filter(function (figure) {
+    return figure.isSelected;
+  });
+  const populationIndexByFigure = getPopulationIndexByFigure(population);
   const sortedWorstFirst = [...population].sort(function (a, b) {
     return (a.fitness ?? Infinity) - (b.fitness ?? Infinity);
   });
-  const replacementCount = Math.min(selectedParents.length, sortedWorstFirst.length);
+  const replacementCount = Math.min(parents.length, sortedWorstFirst.length);
   const nextPopulation = population.map(function (figure) {
     return {
       ...figure,
       isSelected: false
     };
   });
-  const offspring = [];
 
   for (let i = 0; i < replacementCount; i++) {
     const targetFigure = sortedWorstFirst[i];
     const targetIndex = populationIndexByFigure.get(targetFigure);
-    const parentA = selectedParents[i % selectedParents.length];
-    const parentB = selectedParents[(i + 1) % selectedParents.length];
+    const parentA = parents[i % parents.length];
+    const parentB = parents[(i + 1) % parents.length];
     const childFigure = {
       ...nextPopulation[targetIndex],
       color: mixParentColors(p, parentA, parentB),
@@ -68,20 +44,7 @@ export function crossoverSelectedParents(
 
     updateFigureFitness(childFigure);
     nextPopulation[targetIndex] = childFigure;
-    offspring.push(childFigure);
   }
 
-  const nextGeneration = generation + 1;
-  const averageFitness = getAverageFitness(nextPopulation);
-
-  return {
-    population: nextPopulation,
-    selectedParents: offspring,
-    latestOffspring: offspring,
-    generation: nextGeneration,
-    averageFitness,
-    statusMessage:
-      `Generación ${nextGeneration} creada mediante cruce. ${offspring.length} hijos ` +
-      `reemplazaron a los cuadrados más débiles. Aptitud promedio: ${averageFitness.toFixed(4)}.`
-  };
+  return nextPopulation;
 }
