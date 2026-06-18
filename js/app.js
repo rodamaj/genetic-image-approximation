@@ -25,10 +25,6 @@ export function createApp(algorithmState, uiState, referenceState) {
     setAutoEvolveButtonLabel(false);
   }
 
-  function syncCellSizeFromUI() {
-    algorithmState.cellSize = Number(uiState.pixelSizeSelect.value);
-  }
-
   function updateFigureFitness(p, figure) {
     return calculateFigureFitness(p, algorithmState.referenceReady, referenceState, figure);
   }
@@ -155,7 +151,6 @@ export function createApp(algorithmState, uiState, referenceState) {
   return {
     updateStatus,
     setAutoEvolveButtonLabel,
-    syncCellSizeFromUI,
     redrawPopulation,
     generateRandomFigures,
     evolveGeneration,

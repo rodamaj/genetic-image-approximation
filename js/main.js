@@ -13,7 +13,6 @@ const sketch = function (p) {
     const canvas = p.createCanvas(400, 300);
     canvas.parent("sketch-holder-2");
     p.background(255);
-    app.syncCellSizeFromUI();
     app.initializeReference();
     app.setAutoEvolveButtonLabel(false);
   };
@@ -29,15 +28,7 @@ uiState.referenceImage.addEventListener("error", function () {
   app.handleReferenceError();
 });
 
-uiState.pixelSizeSelect.addEventListener("change", function () {
-  app.syncCellSizeFromUI();
-  app.updateStatus(
-    `Tamaño de píxel actualizado a ${algorithmState.cellSize}px. Genera la población nuevamente para aplicar la nueva resolución.`
-  );
-});
-
 document.getElementById("generatePopulationBtn").addEventListener("click", function () {
-  app.syncCellSizeFromUI();
   app.generateRandomFigures(p5instance);
 });
 
