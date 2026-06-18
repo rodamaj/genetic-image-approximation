@@ -105,6 +105,28 @@ function updateFigureFitness(p, figure) {
   return calculateFigureFitness(p, state, figure);
 }
 
+function applyGeneticStepResult(p, result) {
+  state.population = result.population;
+
+  if ("selectedParents" in result) {
+    state.selectedParents = result.selectedParents;
+  }
+
+  if ("latestOffspring" in result) {
+    state.latestOffspring = result.latestOffspring;
+  }
+
+  if ("generation" in result) {
+    state.generation = result.generation;
+  }
+
+  redrawPopulation(p);
+
+  if (result.statusMessage) {
+    updateStatus(result.statusMessage);
+  }
+}
+
 function generateRandomFigures(p) {
   stopAutoEvolve();
   state.population = [];
@@ -148,52 +170,46 @@ const sketch2 = function (p) {
   };
 
   p.selectParents = function (topPercent = 0.2) {
-    return selectParents(state, function redraw() {
-      redrawPopulation(p);
-    }, topPercent);
+    const result = selectParents(state.population, topPercent);
+    applyGeneticStepResult(p, result);
+    return result.selectedParents;
   };
 
   p.crossoverSelectedParents = function () {
-    return crossoverSelectedParents(
+    const result = crossoverSelectedParents(
       p,
-      state,
+      state.population,
+      state.selectedParents,
       function update(figure) {
         return updateFigureFitness(p, figure);
       },
-      function refreshFitness() {
-        return updatePopulationFitness(p, state);
-      },
-      function redraw() {
-        redrawPopulation(p);
-      }
+      state.generation
     );
+    applyGeneticStepResult(p, result);
+    return result.latestOffspring;
   };
 
   p.mutateLatestOffspring = function (mutationRate = 0.7, mutationStrength = 25) {
-    return mutateLatestOffspring(
+    const result = mutateLatestOffspring(
       p,
-      state,
+      state.population,
+      state.latestOffspring,
+      state.selectedParents,
       function update(figure) {
         return updateFigureFitness(p, figure);
       },
-      function refreshFitness() {
-        return updatePopulationFitness(p, state);
-      },
-      function redraw() {
-        redrawPopulation(p);
-      },
+      state.generation,
       mutationRate,
       mutationStrength
     );
+    applyGeneticStepResult(p, result);
+    return result.mutatedFigures;
   };
 
   p.evolveOneGeneration = function () {
     return evolveOneGeneration(p, state, {
       updateFigureFitness: function update(figure) {
         return updateFigureFitness(p, figure);
-      },
-      updatePopulationFitness: function refreshFitness() {
-        return updatePopulationFitness(p, state);
       },
       redrawPopulation: function redraw() {
         redrawPopulation(p);

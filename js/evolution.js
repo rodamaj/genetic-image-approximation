@@ -8,45 +8,59 @@ export function evolveOneGeneration(p, state, helpers) {
     return null;
   }
 
-  const parents = selectParents(state, helpers.redrawPopulation);
-  if (parents.length < 2) {
+  const selectionResult = selectParents(state.population);
+  if (selectionResult.selectedParents.length < 2) {
+    state.population = selectionResult.population;
+    state.selectedParents = selectionResult.selectedParents;
+    state.latestOffspring = selectionResult.latestOffspring;
+    helpers.redrawPopulation();
     state.updateStatus("No fue posible evolucionar: se necesitan al menos dos padres seleccionados.");
     return null;
   }
 
-  const offspring = crossoverSelectedParents(
+  const crossoverResult = crossoverSelectedParents(
     p,
-    state,
+    selectionResult.population,
+    selectionResult.selectedParents,
     helpers.updateFigureFitness,
-    helpers.updatePopulationFitness,
-    helpers.redrawPopulation
+    state.generation
   );
-  if (offspring.length === 0) {
+  if (crossoverResult.latestOffspring.length === 0) {
+    state.population = crossoverResult.population;
+    state.selectedParents = crossoverResult.selectedParents;
+    state.latestOffspring = crossoverResult.latestOffspring;
+    state.generation = crossoverResult.generation;
+    helpers.redrawPopulation();
     state.updateStatus("No fue posible evolucionar: el cruce no produjo hijos.");
     return null;
   }
 
-  const mutatedFigures = mutateLatestOffspring(
+  const mutationResult = mutateLatestOffspring(
     p,
-    state,
+    crossoverResult.population,
+    crossoverResult.latestOffspring,
+    crossoverResult.selectedParents,
     helpers.updateFigureFitness,
-    helpers.updatePopulationFitness,
-    helpers.redrawPopulation
+    crossoverResult.generation
   );
-  const averageFitness = state.population.length > 0 ? helpers.updatePopulationFitness() : null;
-  helpers.redrawPopulation();
 
-  if (averageFitness !== null) {
-    state.updateStatus(
-      `Generación ${state.generation} evolucionada. ${parents.length} padres, ${offspring.length} hijos y ${mutatedFigures.length} mutaciones aplicadas. Aptitud promedio: ${averageFitness.toFixed(4)}.`
-    );
-  }
+  state.population = mutationResult.population;
+  state.selectedParents = mutationResult.selectedParents;
+  state.latestOffspring = mutationResult.latestOffspring;
+  state.generation = mutationResult.generation;
+
+  helpers.redrawPopulation();
+  state.updateStatus(
+    `Generación ${state.generation} evolucionada. ${selectionResult.selectedParents.length} padres, ` +
+    `${crossoverResult.latestOffspring.length} hijos y ${mutationResult.mutatedFigures.length} ` +
+    `mutaciones aplicadas. Aptitud promedio: ${mutationResult.averageFitness.toFixed(4)}.`
+  );
 
   return {
-    parents,
-    offspring,
-    mutatedFigures,
+    parents: selectionResult.selectedParents,
+    offspring: crossoverResult.latestOffspring,
+    mutatedFigures: mutationResult.mutatedFigures,
     generation: state.generation,
-    averageFitness
+    averageFitness: mutationResult.averageFitness
   };
 }
