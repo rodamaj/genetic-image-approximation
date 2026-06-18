@@ -1,96 +1,35 @@
-import {
-  syncReferenceImage,
-  calculateFigureFitness,
-  updatePopulationFitness
-} from "./fitness.js";
+import { calculateFigureFitness, updatePopulationFitness } from "./fitness.js";
 import { evolveOneGeneration } from "./evolution.js";
+import { AUTO_EVOLVE_INTERVAL_MS, FIXED_CELL_SIZE } from "./constants.js";
+import { createUiControls } from "./ui-controls.js";
+import { redrawPopulation } from "./renderer.js";
+import { createPopulation } from "./population-factory.js";
 import {
-  AUTO_EVOLVE_INTERVAL_MS,
-  BACKGROUND_COLOR,
-  FIGURE_ALPHA,
-  FIXED_CELL_SIZE,
-  HIGHLIGHT_STROKE_COLOR,
-  RANDOM_COLOR_MAX,
-  RANDOM_COLOR_MIN
-} from "./constants.js";
+  initializeReference as syncInitialReference,
+  handleReferenceError as setReferenceError
+} from "./reference-actions.js";
 
 export function createApp(algorithmState, uiState, referenceState) {
   function updateStatus(message) {
     uiState.fitnessStatus.textContent = message;
   }
 
-  function setAutoEvolveButtonLabel(isRunning) {
-    uiState.autoEvolveButton.textContent = isRunning
-      ? "Pausar Evolución Continua"
-      : "Iniciar Evolución Continua";
-  }
-
-  function stopAutoEvolve() {
-    if (uiState.autoEvolveTimer !== null) {
-      window.clearInterval(uiState.autoEvolveTimer);
-      uiState.autoEvolveTimer = null;
-    }
-
-    setAutoEvolveButtonLabel(false);
-  }
+  const uiControls = createUiControls(uiState, updateStatus);
 
   function updateFigureFitness(p, figure) {
     return calculateFigureFitness(p, algorithmState.referenceReady, referenceState, figure);
   }
 
-  function createFigure(p, x, y) {
-    const figure = {
-      x,
-      y,
-      size: FIXED_CELL_SIZE,
-      color: p.color(
-        p.random(RANDOM_COLOR_MIN, RANDOM_COLOR_MAX),
-        p.random(RANDOM_COLOR_MIN, RANDOM_COLOR_MAX),
-        p.random(RANDOM_COLOR_MIN, RANDOM_COLOR_MAX),
-        FIGURE_ALPHA
-      ),
-      fitness: null,
-      targetColor: null,
-      isSelected: false
-    };
-
-    if (algorithmState.referenceReady) {
-      return updateFigureFitness(p, figure);
-    }
-
-    return figure;
-  }
-
-  function drawFigure(p, figure) {
-    p.noStroke();
-    p.fill(figure.color);
-    p.square(figure.x, figure.y, figure.size);
-
-    if (figure.isSelected) {
-      p.noFill();
-      p.stroke(HIGHLIGHT_STROKE_COLOR);
-      p.strokeWeight(2);
-      p.square(figure.x + 1, figure.y + 1, figure.size - 2);
-    }
-  }
-
-  function redrawPopulation(p) {
-    p.background(BACKGROUND_COLOR);
-    for (const figure of algorithmState.population) {
-      drawFigure(p, figure);
-    }
-  }
-
   function generateRandomFigures(p) {
-    stopAutoEvolve();
-    algorithmState.population = [];
-    algorithmState.generation = 0;
-
-    for (let y = 0; y < p.height; y += FIXED_CELL_SIZE) {
-      for (let x = 0; x < p.width; x += FIXED_CELL_SIZE) {
-        algorithmState.population.push(createFigure(p, x, y));
+    uiControls.stopAutoEvolve();
+    algorithmState.population = createPopulation(
+      p,
+      algorithmState.referenceReady,
+      function update(figure) {
+        return updateFigureFitness(p, figure);
       }
-    }
+    );
+    algorithmState.generation = 0;
 
     const fitnessResult = updatePopulationFitness(
       p,
@@ -100,7 +39,7 @@ export function createApp(algorithmState, uiState, referenceState) {
     );
     algorithmState.population = fitnessResult.population;
     algorithmState.referenceReady = fitnessResult.averageFitness !== null;
-    redrawPopulation(p);
+    redrawPopulation(p, algorithmState.population);
 
     if (fitnessResult.averageFitness === null) {
       return;
@@ -121,15 +60,15 @@ export function createApp(algorithmState, uiState, referenceState) {
         return updateFigureFitness(p, figure);
       },
       redrawPopulation: function redraw() {
-        redrawPopulation(p);
+        redrawPopulation(p, algorithmState.population);
       },
       updateStatus
     });
   }
 
   function toggleAutoEvolve(p, intervalMs = AUTO_EVOLVE_INTERVAL_MS) {
-    if (uiState.autoEvolveTimer !== null) {
-      stopAutoEvolve();
+    if (uiControls.isAutoEvolving()) {
+      uiControls.stopAutoEvolve();
       updateStatus(`Evolución continua en pausa en la generación ${algorithmState.generation}.`);
       return false;
     }
@@ -138,29 +77,26 @@ export function createApp(algorithmState, uiState, referenceState) {
       generateRandomFigures(p);
     }
 
-    uiState.autoEvolveTimer = window.setInterval(function () {
+    uiControls.startAutoEvolve(function runStep() {
       evolveGeneration(p);
     }, intervalMs);
 
-    setAutoEvolveButtonLabel(true);
+    uiControls.setAutoEvolveButtonLabel(true);
     updateStatus(`Evolución continua iniciada desde la generación ${algorithmState.generation}.`);
     return true;
   }
 
   function initializeReference() {
-    algorithmState.referenceReady = syncReferenceImage(referenceState, updateStatus);
-    return algorithmState.referenceReady;
+    return syncInitialReference(algorithmState, referenceState, updateStatus);
   }
 
   function handleReferenceError() {
-    algorithmState.referenceReady = false;
-    updateStatus("Aptitud no disponible. No se pudo cargar la imagen de referencia local.");
+    setReferenceError(algorithmState, updateStatus);
   }
 
   return {
     updateStatus,
-    setAutoEvolveButtonLabel,
-    redrawPopulation,
+    setAutoEvolveButtonLabel: uiControls.setAutoEvolveButtonLabel,
     generateRandomFigures,
     evolveGeneration,
     toggleAutoEvolve,
