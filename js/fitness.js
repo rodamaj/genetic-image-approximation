@@ -56,7 +56,11 @@ export function getAverageReferenceColor(state, x, y, size) {
 
 export function calculateFigureFitness(p, state, figure) {
   if (!state.referenceReady) {
-    return null;
+    return {
+      ...figure,
+      fitness: null,
+      targetColor: null
+    };
   }
 
   const targetColor = getAverageReferenceColor(state, figure.x, figure.y, figure.size);
@@ -71,10 +75,11 @@ export function calculateFigureFitness(p, state, figure) {
     alphaDiff ** 2
   );
 
-  figure.targetColor = targetColor;
-  figure.fitness = 1 / (1 + distance);
-
-  return figure.fitness;
+  return {
+    ...figure,
+    targetColor,
+    fitness: 1 / (1 + distance)
+  };
 }
 
 export function getAverageFitness(population) {
@@ -93,17 +98,25 @@ export function getAverageFitness(population) {
 
 export function updatePopulationFitness(p, state) {
   if (!syncReferenceImage(state)) {
-    for (const figure of state.population) {
-      figure.fitness = null;
-      figure.targetColor = null;
-      figure.isSelected = false;
-    }
-    return null;
+    return {
+      population: state.population.map(function (figure) {
+        return {
+          ...figure,
+          fitness: null,
+          targetColor: null,
+          isSelected: false
+        };
+      }),
+      averageFitness: null
+    };
   }
 
-  for (const figure of state.population) {
-    calculateFigureFitness(p, state, figure);
-  }
+  const population = state.population.map(function (figure) {
+    return calculateFigureFitness(p, state, figure);
+  });
 
-  return getAverageFitness(state.population);
+  return {
+    population,
+    averageFitness: getAverageFitness(population)
+  };
 }

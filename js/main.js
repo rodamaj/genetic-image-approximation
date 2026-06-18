@@ -66,7 +66,7 @@ function createFigure(p, x, y) {
   };
 
   if (state.referenceReady) {
-    updateFigureFitness(p, figure);
+    return updateFigureFitness(p, figure);
   }
 
   return figure;
@@ -107,15 +107,16 @@ function generateRandomFigures(p) {
     }
   }
 
-  const averageFitness = updatePopulationFitness(p, state);
+  const fitnessResult = updatePopulationFitness(p, state);
+  state.population = fitnessResult.population;
   redrawPopulation(p);
 
-  if (averageFitness === null) {
+  if (fitnessResult.averageFitness === null) {
     return;
   }
 
   updateStatus(
-    `Generación ${state.generation} lista. ${state.population.length} cuadrados evaluados con píxeles de ${state.cellSize}px. Aptitud promedio: ${averageFitness.toFixed(4)}.`
+    `Generación ${state.generation} lista. ${state.population.length} cuadrados evaluados con píxeles de ${state.cellSize}px. Aptitud promedio: ${fitnessResult.averageFitness.toFixed(4)}.`
   );
 }
 

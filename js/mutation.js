@@ -37,9 +37,11 @@ export function mutatePopulation(
     if (p.random() <= mutationRate) {
       const targetIndex = populationIndexByFigure.get(figure);
       const mutatedFigure = mutateFigure(p, nextPopulation[targetIndex], mutationStrength);
-      mutatedFigure.isSelected = true;
-      updateFigureFitness(mutatedFigure);
-      nextPopulation[targetIndex] = mutatedFigure;
+      const evaluatedMutatedFigure = updateFigureFitness({
+        ...mutatedFigure,
+        isSelected: true
+      });
+      nextPopulation[targetIndex] = evaluatedMutatedFigure;
       mutatedFigureIndexes.add(targetIndex);
     }
   }
@@ -47,9 +49,10 @@ export function mutatePopulation(
   if (mutatedFigureIndexes.size === 0) {
     const fallbackIndex = populationIndexByFigure.get(offspring[0]);
     const fallbackFigure = mutateFigure(p, nextPopulation[fallbackIndex], mutationStrength);
-    fallbackFigure.isSelected = true;
-    updateFigureFitness(fallbackFigure);
-    nextPopulation[fallbackIndex] = fallbackFigure;
+    nextPopulation[fallbackIndex] = updateFigureFitness({
+      ...fallbackFigure,
+      isSelected: true
+    });
   }
 
   return {

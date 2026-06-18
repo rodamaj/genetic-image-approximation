@@ -34,9 +34,9 @@ export function crossoverPopulation(p, population, parents, updateFigureFitness)
       isSelected: true
     };
 
-    updateFigureFitness(childFigure);
-    nextPopulation[targetIndex] = childFigure;
-    offspring.push(childFigure);
+    const evaluatedChildFigure = updateFigureFitness(childFigure);
+    nextPopulation[targetIndex] = evaluatedChildFigure;
+    offspring.push(evaluatedChildFigure);
   }
 
   return {
