@@ -1,4 +1,6 @@
-export function selectParents(population, topPercent = 0.2) {
+import { SELECTION_RATE } from "./constants.js";
+
+export function selectParents(population, topPercent = SELECTION_RATE) {
   const indexedPopulation = population.map(function (figure, index) {
     return { figure, index };
   });

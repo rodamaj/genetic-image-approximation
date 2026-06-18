@@ -4,6 +4,15 @@ import {
   updatePopulationFitness
 } from "./fitness.js";
 import { evolveOneGeneration } from "./evolution.js";
+import {
+  AUTO_EVOLVE_INTERVAL_MS,
+  BACKGROUND_COLOR,
+  FIGURE_ALPHA,
+  FIXED_CELL_SIZE,
+  HIGHLIGHT_STROKE_COLOR,
+  RANDOM_COLOR_MAX,
+  RANDOM_COLOR_MIN
+} from "./constants.js";
 
 export function createApp(algorithmState, uiState, referenceState) {
   function updateStatus(message) {
@@ -33,12 +42,12 @@ export function createApp(algorithmState, uiState, referenceState) {
     const figure = {
       x,
       y,
-      size: algorithmState.cellSize,
+      size: FIXED_CELL_SIZE,
       color: p.color(
-        p.random(40, 255),
-        p.random(40, 255),
-        p.random(40, 255),
-        190
+        p.random(RANDOM_COLOR_MIN, RANDOM_COLOR_MAX),
+        p.random(RANDOM_COLOR_MIN, RANDOM_COLOR_MAX),
+        p.random(RANDOM_COLOR_MIN, RANDOM_COLOR_MAX),
+        FIGURE_ALPHA
       ),
       fitness: null,
       targetColor: null,
@@ -59,14 +68,14 @@ export function createApp(algorithmState, uiState, referenceState) {
 
     if (figure.isSelected) {
       p.noFill();
-      p.stroke(255);
+      p.stroke(HIGHLIGHT_STROKE_COLOR);
       p.strokeWeight(2);
       p.square(figure.x + 1, figure.y + 1, figure.size - 2);
     }
   }
 
   function redrawPopulation(p) {
-    p.background(255);
+    p.background(BACKGROUND_COLOR);
     for (const figure of algorithmState.population) {
       drawFigure(p, figure);
     }
@@ -77,8 +86,8 @@ export function createApp(algorithmState, uiState, referenceState) {
     algorithmState.population = [];
     algorithmState.generation = 0;
 
-    for (let y = 0; y < p.height; y += algorithmState.cellSize) {
-      for (let x = 0; x < p.width; x += algorithmState.cellSize) {
+    for (let y = 0; y < p.height; y += FIXED_CELL_SIZE) {
+      for (let x = 0; x < p.width; x += FIXED_CELL_SIZE) {
         algorithmState.population.push(createFigure(p, x, y));
       }
     }
@@ -98,7 +107,7 @@ export function createApp(algorithmState, uiState, referenceState) {
     }
 
     updateStatus(
-      `Generación ${algorithmState.generation} lista. ${algorithmState.population.length} cuadrados evaluados con píxeles de ${algorithmState.cellSize}px. Aptitud promedio: ${fitnessResult.averageFitness.toFixed(4)}.`
+      `Generación ${algorithmState.generation} lista. ${algorithmState.population.length} cuadrados evaluados con píxeles de ${FIXED_CELL_SIZE}px. Aptitud promedio: ${fitnessResult.averageFitness.toFixed(4)}.`
     );
   }
 
@@ -118,7 +127,7 @@ export function createApp(algorithmState, uiState, referenceState) {
     });
   }
 
-  function toggleAutoEvolve(p, intervalMs = 250) {
+  function toggleAutoEvolve(p, intervalMs = AUTO_EVOLVE_INTERVAL_MS) {
     if (uiState.autoEvolveTimer !== null) {
       stopAutoEvolve();
       updateStatus(`Evolución continua en pausa en la generación ${algorithmState.generation}.`);

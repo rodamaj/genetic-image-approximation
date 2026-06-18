@@ -93,7 +93,12 @@ export function getAverageFitness(population) {
   return totalFitness / population.length;
 }
 
-export function updatePopulationFitness(p, algorithmState, referenceState, updateStatus) {
+export function updatePopulationFitness(
+  p,
+  algorithmState,
+  referenceState,
+  updateStatus
+) {
   if (!syncReferenceImage(referenceState, updateStatus)) {
     return {
       population: algorithmState.population.map(function (figure) {

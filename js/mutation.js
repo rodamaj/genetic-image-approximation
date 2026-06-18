@@ -1,10 +1,16 @@
 import { getPopulationIndexByFigure } from "./population.js";
+import {
+  COLOR_CHANNEL_MAX,
+  COLOR_CHANNEL_MIN,
+  MUTATION_RATE,
+  MUTATION_STRENGTH
+} from "./constants.js";
 
 function clampColorChannel(value) {
-  return Math.max(0, Math.min(255, value));
+  return Math.max(COLOR_CHANNEL_MIN, Math.min(COLOR_CHANNEL_MAX, value));
 }
 
-function mutateFigure(p, figure, mutationStrength = 5) {
+function mutateFigure(p, figure, mutationStrength = MUTATION_STRENGTH) {
   return {
     ...figure,
     color: p.color(
@@ -21,8 +27,8 @@ export function mutatePopulation(
   population,
   offspring,
   updateFigureFitness,
-  mutationRate = 0.7,
-  mutationStrength = 25
+  mutationRate = MUTATION_RATE,
+  mutationStrength = MUTATION_STRENGTH
 ) {
   const populationIndexByFigure = getPopulationIndexByFigure(population);
   const nextPopulation = population.map(function (figure) {

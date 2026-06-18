@@ -2,6 +2,7 @@ import { createAlgorithmState } from "./algorithm-state.js";
 import { createUiState } from "./ui-state.js";
 import { createReferenceState } from "./reference-state.js";
 import { createApp } from "./app.js";
+import { BACKGROUND_COLOR, CANVAS_HEIGHT, CANVAS_WIDTH } from "./constants.js";
 
 const algorithmState = createAlgorithmState();
 const uiState = createUiState();
@@ -10,9 +11,9 @@ const app = createApp(algorithmState, uiState, referenceState);
 
 const sketch = function (p) {
   p.setup = function () {
-    const canvas = p.createCanvas(400, 300);
+    const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
     canvas.parent("sketch-holder-2");
-    p.background(255);
+    p.background(BACKGROUND_COLOR);
     app.initializeReference();
     app.setAutoEvolveButtonLabel(false);
   };
