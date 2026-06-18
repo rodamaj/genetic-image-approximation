@@ -1,5 +1,9 @@
 import { evolveOneGeneration } from "../genetic/evolution.js";
-import { AUTO_EVOLVE_INTERVAL_MS, FIXED_CELL_SIZE } from "../config/constants.js";
+import {
+  AUTO_EVOLVE_INTERVAL_MS,
+  FIXED_CELL_SIZE,
+  MAX_AUTO_EVOLVE_GENERATIONS
+} from "../config/constants.js";
 import { createUiControls } from "./ui-controls.js";
 import { redrawPopulation } from "./renderer.js";
 import { createPopulation } from "./population-factory.js";
@@ -116,7 +120,14 @@ export function createApp(algorithmState, uiState, referenceState) {
     }
 
     uiControls.startAutoEvolve(function runStep() {
-      evolveGeneration(p);
+      const result = evolveGeneration(p);
+
+      if (result !== null && algorithmState.generation >= MAX_AUTO_EVOLVE_GENERATIONS) {
+        uiControls.stopAutoEvolve();
+        updateStatus(
+          `Evolución continua detenida en la generación ${algorithmState.generation} al alcanzar el límite de ${MAX_AUTO_EVOLVE_GENERATIONS} generaciones.`
+        );
+      }
     }, intervalMs);
 
     uiControls.setAutoEvolveButtonLabel(true);
